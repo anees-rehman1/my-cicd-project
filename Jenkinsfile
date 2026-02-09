@@ -34,11 +34,15 @@ pipeline {
 
         git add k8s/deployment.yaml
         git commit -m "image update ${BUILD_NUMBER}"
-        git push origin main
         '''
-  }
-}
 
-   
+        withCredentials([usernamePassword(credentialsId: 'github', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')]) {
+          sh '''
+          git remote set-url origin https://$GIT_USER:$GIT_PASS@github.com/anees-rehman1/my-cicd-project.git
+          git push origin main
+          '''
+        }
+      }
+    }
   }
 }
