@@ -22,18 +22,23 @@ pipeline {
         sh 'docker push $DOCKERHUB/$IMAGE:${BUILD_NUMBER}'
       }
     }
-
     stage('Update Deployment') {
       steps {
         sh '''
+        git checkout main
+
         sed -i "s|image:.*|image: shadow1234090/my-cicd-project:${BUILD_NUMBER}|g" k8s/deployment.yaml
-        git config --global user.email "jenkins@local"
-        git config --global user.name "jenkins"
-        git add .
-        git commit -m "image update"
-        git push
+
+        git config user.email "jenkins@local"
+        git config user.name "jenkins"
+
+        git add k8s/deployment.yaml
+        git commit -m "image update ${BUILD_NUMBER}"
+        git push origin main
         '''
-      }
-    }
+  }
+}
+
+   
   }
 }
