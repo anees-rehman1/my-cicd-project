@@ -14,6 +14,6 @@ spec:
     spec:
       containers:
       - name: myapp
-        image: shadow1234090/my-cicd-project:47
+        image: shadow1234090/my-cicd-project:48
         ports:
         - containerPort: 80
