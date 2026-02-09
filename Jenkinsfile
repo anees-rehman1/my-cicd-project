@@ -26,7 +26,7 @@ pipeline {
       steps {
         sh '''
         git checkout main
-        git pull origin main
+        git pull --rebase origin main
 
         sed -i "s|image:.*|image: shadow1234090/my-cicd-project:${BUILD_NUMBER}|g" k8s/deployment.yaml
 
