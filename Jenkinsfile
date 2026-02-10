@@ -30,25 +30,34 @@ pipeline {
         sh 'docker push $DOCKERHUB/$IMAGE:latest'
       }
     }
-
-    stage('Update Deployment') {
+        stage('Update Deployment') {
       steps {
         sh '''
           sed -i "s|shadow1234090/my-cicd-project:.*|shadow1234090/my-cicd-project:${BUILD_NUMBER}|g" k8s/deployment.yaml
         '''
         script {
-          withCredentials([usernamePassword(credentialsId: 'github-token', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_TOKEN')]) {
-            sh """
-              git config --global user.email "jenkins@local"
-              git config --global user.name "jenkins"
-              git remote set-url origin https://${GIT_TOKEN}@github.com/anees-rehman1/my-cicd-project.git
-              git add k8s/deployment.yaml
-              git commit -m "Update image to version ${BUILD_NUMBER}"
-              git push origin HEAD:main
-            """
+          withCredentials([usernamePassword(credentialsId: 'github-token', 
+                          usernameVariable: 'GIT_USER', 
+                          passwordVariable: 'GIT_TOKEN')]) {
+            sh '''
+              # Configure git with Jenkins-specific email
+              git config --global user.email "jenkins-ci@yourdomain.com"
+              git config --global user.name "Jenkins CI"
+              
+              # Check if there are actual changes (not Jenkins' own changes)
+              if ! git diff --quiet k8s/deployment.yaml; then
+                git add k8s/deployment.yaml
+                git commit -m "[Jenkins] Update to build ${BUILD_NUMBER}"
+                git push https://${GIT_USER}:${GIT_TOKEN}@github.com/anees-rehman1/my-cicd-project.git HEAD:main
+                echo "Changes pushed to GitHub"
+              else
+                echo "No changes to deploy"
+              fi
+            '''
           }
         }
       }
     }
+
   }
 }
