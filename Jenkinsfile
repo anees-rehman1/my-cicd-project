@@ -47,8 +47,8 @@ pipeline {
       steps {
         script {
           echo "Building Docker image..."
-          // USING SUDO FOR DOCKER
-          sh 'sudo docker build -t $DOCKERHUB/$IMAGE:${BUILD_NUMBER} .'
+          // REMOVED SUDO
+          sh 'docker build -t $DOCKERHUB/$IMAGE:${BUILD_NUMBER} .'
         }
       }
     }
@@ -58,10 +58,10 @@ pipeline {
         script {
           echo "Pushing Docker image..."
           withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-            sh 'echo $PASS | sudo docker login -u $USER --password-stdin'
+            sh 'echo $PASS | docker login -u $USER --password-stdin'
           }
-          // USING SUDO FOR DOCKER
-          sh 'sudo docker push $DOCKERHUB/$IMAGE:${BUILD_NUMBER}'
+          // REMOVED SUDO
+          sh 'docker push $DOCKERHUB/$IMAGE:${BUILD_NUMBER}'
         }
       }
     }
@@ -95,8 +95,8 @@ pipeline {
       echo "Build failed! Not updating commit hash."
     }
     always {
-      // USING SUDO FOR DOCKER
-      sh 'sudo docker system prune -f || true'
+      // REMOVED SUDO
+      sh 'docker system prune -f || true'
     }
   }
 }
