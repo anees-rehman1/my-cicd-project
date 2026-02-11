@@ -27,7 +27,7 @@ pipeline {
           if (msg.contains('[skip ci]')) {
             echo "🚫 Jenkins generated commit detected — skipping pipeline"
             currentBuild.result = 'SUCCESS'
-            error("Skipping build")
+            return
           }
         }
       }
