@@ -16,32 +16,34 @@ pipeline {
     }
 
     stage('Check for Changes') {
-      steps {
-        script {
-          def currentCommit = sh(script: "git rev-parse HEAD", returnStdout: true).trim()
-          echo "Current commit: ${currentCommit}"
-          
-          def lastBuiltCommitFile = 'last-built-commit.txt'
-          def fileExists = fileExists(lastBuiltCommitFile)
-          
-          if (fileExists) {
-            def lastBuiltCommit = readFile(lastBuiltCommitFile).trim()
-            echo "Last built commit: ${lastBuiltCommit}"
-            
-            if (currentCommit == lastBuiltCommit) {
-              echo "No changes detected. Skipping build."
-              currentBuild.result = 'SUCCESS'
-              error("No changes, build skipped")
-            } else {
-              echo "Changes detected! Building..."
-            }
-          } else {
-            echo "First time build. Creating commit tracking file."
-            writeFile file: lastBuiltCommitFile, text: currentCommit
-          }
+  steps {
+    script {
+      def currentCommit = sh(script: "git rev-parse HEAD", returnStdout: true).trim()
+      echo "Current commit: ${currentCommit}"
+      
+      def lastBuiltCommitFile = 'last-built-commit.txt'
+      def fileExists = fileExists(lastBuiltCommitFile)
+      
+      if (fileExists) {
+        def lastBuiltCommit = readFile(lastBuiltCommitFile).trim()
+        echo "Last built commit: ${lastBuiltCommit}"
+        
+        if (currentCommit == lastBuiltCommit) {
+          echo "No changes detected. Skipping build."
+          currentBuild.result = 'SUCCESS'  // This is already SUCCESS
+          // Change this line to NOT throw an error
+          echo "✅ No changes needed - build skipped gracefully"
+          return  // This exits the stage gracefully instead of throwing error
+        } else {
+          echo "Changes detected! Building..."
         }
+      } else {
+        echo "First time build. Creating commit tracking file."
+        writeFile file: lastBuiltCommitFile, text: currentCommit
       }
     }
+  }
+}
 
     stage('Build Image') {
       steps {
@@ -84,19 +86,23 @@ pipeline {
   }
 
   post {
-    success {
-      script {
+  success {
+    script {
+      // Only save commit hash if we actually built something
+      if (currentBuild.result == 'SUCCESS' && env.STAGE_NAME != 'Check for Changes') {
         def currentCommit = sh(script: "git rev-parse HEAD", returnStdout: true).trim()
         writeFile file: 'last-built-commit.txt', text: currentCommit
         echo "Saved commit hash: ${currentCommit}"
+      } else {
+        echo "Build skipped - not saving commit hash"
       }
     }
-    failure {
-      echo "Build failed! Not updating commit hash."
-    }
-    always {
-      // REMOVED SUDO
-      sh 'docker system prune -f || true'
-    }
   }
+  failure {
+    echo "Build failed! Not updating commit hash."
+  }
+  always {
+    sh 'docker system prune -f || true'
+  }
+}
 }
